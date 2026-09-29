@@ -142,6 +142,27 @@ h2{font-size:1.1rem;font-weight:600;margin:26px 6px 8px}
 .donut{display:flex;justify-content:center;padding:6px 0 4px}
 .donut svg{width:min(70vw,250px);height:auto;display:block}
 .donut circle{transition:stroke-dasharray .5s ease, stroke-dashoffset .5s ease}
+/* Pie ring is a transparent tube. Each slice holds a few glowing lights in its own color that drift back and forth inside its arc */
+.donut{position:relative}
+.donut .pielights{position:absolute;left:50%;top:6px;width:min(70vw,250px);margin-left:calc(min(70vw,250px) / -2);aspect-ratio:1;pointer-events:none;
+  -webkit-mask:radial-gradient(circle closest-side, transparent 62.5%, #000 63.5%, #000 88.5%, transparent 89.5%);
+  mask:radial-gradient(circle closest-side, transparent 62.5%, #000 63.5%, #000 88.5%, transparent 89.5%)}
+.pl-slice{position:absolute;inset:0;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 55%, #fff);--c3:color-mix(in srgb, var(--c) 80%, #000);
+  filter:blur(7px) saturate(140%);opacity:.9;
+  -webkit-mask:conic-gradient(from var(--a), #000 var(--s), transparent 0);mask:conic-gradient(from var(--a), #000 var(--s), transparent 0)}
+.pl-slice b{position:absolute;inset:0;will-change:transform;animation-name:plswing;animation-duration:var(--t,7s);animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:var(--dir,normal);animation-delay:var(--dl,0s)}
+.pl-slice b::before{content:"";position:absolute;left:50%;top:12%;width:var(--w,26%);aspect-ratio:1;margin-left:calc(var(--w,26%) / -2);margin-top:calc(var(--w,26%) / -2);border-radius:50%;
+  background:radial-gradient(circle closest-side, var(--bc) 0%, color-mix(in srgb, var(--bc) 50%, transparent) 50%, transparent 100%)}
+.pl-slice b:nth-child(1){--bc:var(--c1);--w:23%;--t:6s;--dl:0s}
+.pl-slice b:nth-child(2){--bc:var(--c2);--w:19.2%;--t:7.5s;--dl:-2s;--dir:reverse}
+.pl-slice b:nth-child(3){--bc:var(--c3);--w:21.8%;--t:8.5s;--dl:-4s}
+.pl-slice:nth-child(2n) b{animation-duration:calc(var(--t) * 1.27)}
+@keyframes plswing{
+  0%{transform:rotate(calc(var(--mid) - var(--amp) * .8)) scale(1)}
+  33%{transform:rotate(calc(var(--mid) + var(--amp) * .9)) scale(1.07)}
+  66%{transform:rotate(calc(var(--mid) - var(--amp) * .2)) scale(.94)}
+  100%{transform:rotate(calc(var(--mid) - var(--amp) * .8)) scale(1)}
+}
 .ctr-big{font-size:14px;font-weight:700;fill:var(--ink);letter-spacing:-.4px}
 .ctr-small{font-size:5.2px;fill:var(--muted);font-weight:500}
 .legend{list-style:none;margin:10px 0 0;padding:0}
@@ -528,8 +549,8 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
-/* ---------- colors (Apple system palette) ---------- */
-const PALETTE = ["#0A84FF","#FF9F0A","#FF375F","#30D158","#BF5AF2","#40C8E0","#FFD60A","#5E5CE6","#FF453A","#AC8E68","#63E6E2","#FF6482"];
+/* ---------- colors (vivid, fully saturated) ---------- */
+const PALETTE = ["#0A84FF","#FF9F0A","#FF2D55","#30D158","#BF5AF2","#00D2F0","#FFD60A","#5E5CE6","#FF3B30","#00E0A4","#FF4FD8","#A6E22E"];
 function colorMap(){
   const map = {}; let n = 0;
   const add = l => { const k = l.toLowerCase(); if (!(k in map)) map[k] = PALETTE[n++ % PALETTE.length]; };
@@ -928,6 +949,7 @@ $("periodLabel").onclick = openPeriod;
 function donutSVG(groups, total, colors){
   const NS = "http://www.w3.org/2000/svg", R = 38, W = 13, C = 2 * Math.PI * R, GAP = 0.9, MIN = 0.6;
   const svg = document.createElementNS(NS, "svg");
+  svg.slices = [];
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-label", "Time per activity");
@@ -939,16 +961,18 @@ function donutSVG(groups, total, colors){
     const len = g.ms / total * C;
     const color = colors[g.label.toLowerCase()];
     if (groups.length === 1){
-      ring.appendChild(mk("circle", { cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W }));
+      ring.appendChild(mk("circle", { cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.14 }));
+      svg.slices.push({ a:0, s:360, color });
     } else {
       /* Flat ends keep each arc exactly proportional. A thin gap separates slices,
          and very small slices keep a hairline minimum so they stay visible. */
       const draw = len > GAP * 3 ? len - GAP : Math.max(MIN, len * 0.7);
       const start = pos + (len - draw) / 2;
       ring.appendChild(mk("circle", {
-        cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W,
+        cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.14,
         "stroke-dasharray": draw + " " + (C - draw), "stroke-dashoffset": -start
       }));
+      svg.slices.push({ a:start / C * 360, s:draw / C * 360, color });
     }
     pos += len;
   });
@@ -977,7 +1001,30 @@ function renderStats(){
     sum.innerHTML = '<div class="empty">No finished sessions in this period.<br>Tap NEXT to start and to log time.</div>';
   } else {
     const d = document.createElement("div"); d.className = "donut";
-    d.appendChild(donutSVG(sorted, total, colors)); sum.appendChild(d);
+    const donut = donutSVG(sorted, total, colors);
+    d.appendChild(donut);
+    const gl = document.createElement("div"); gl.className = "pielights"; gl.setAttribute("aria-hidden", "true");
+    donut.slices.forEach(sl => {
+      const el = document.createElement("div"); el.className = "pl-slice";
+      el.style.cssText = "--c:" + sl.color + ";--a:" + sl.a.toFixed(2) + "deg;--s:" + sl.s.toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
+      /* Longer arcs get more lights (about one per 32 degrees, boosted on long arcs, 2 to 14) so they never look empty */
+      let n = Math.max(2, Math.round(sl.s / 32));
+      if (n === 3 || n === 4) n = 5; else if (n === 5) n = 7; else if (n > 5) n += 2;
+      if (donut.slices.length === 1) n += 19;   /* a single full ring gets 19 extra lights */
+      n = Math.min(donut.slices.length === 1 ? 40 : 14, n);
+      const cs = ["--c1", "--c2", "--c3"], ws = [23, 19.2, 21.8], ts = [6, 7.5, 8.5, 6.8, 9.2];
+      for (let i = 0; i < n; i++){
+        const b = document.createElement("b");
+        const f1 = (i * 0.618) % 1, f2 = (i * 0.382 + 0.2) % 1;
+        /* Each light drifts only a short way (about one light width, like the buttons), and the lights start evenly spread along the arc */
+        const amp = Math.min(sl.s / 2, 22) * (0.55 + 0.45 * f1), mid = sl.a + sl.s * (i + 0.5) / n + (f2 - 0.5) * (sl.s / n) * 0.4;
+        b.style.cssText = "--bc:var(" + cs[i % 3] + ");--w:" + ws[i % 3] + "%;--t:" + ts[i % 5] + "s;--dl:-" + ((i * 1.7) % ts[i % 5]).toFixed(1) + "s;--dir:" + (i % 2 ? "reverse" : "normal") + ";--mid:" + mid.toFixed(2) + "deg;--amp:" + amp.toFixed(2) + "deg";
+        el.appendChild(b);
+      }
+      gl.appendChild(el);
+    });
+    d.appendChild(gl);
+    sum.appendChild(d);
     const ul = document.createElement("ul"); ul.className = "legend";
     sorted.forEach(g => {
       const li = document.createElement("li");

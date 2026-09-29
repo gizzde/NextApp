@@ -306,6 +306,12 @@ nav button.on{opacity:1;color:var(--tint)}
   50%{transform:translate(70%,-6%) scale(1.1)}
   100%{transform:translate(-70%,6%) scale(.95)}
 }
+/* Blue variant for Resume, on its own rhythm */
+.lightpill.blue .lp-orbs i:nth-child(1){--c:#0A84FF;--t:6.4s;--dir:reverse}
+.lightpill.blue .lp-orbs i:nth-child(2){--c:#5AC8FA;--t:8.2s;--dir:normal}
+.lightpill.blue .lp-orbs i:nth-child(3){--c:#007AFF;--t:5.7s;--dir:normal}
+.lightpill.blue .lp-orbs i:nth-child(4){--c:#64D2FF;--t:9.1s;--dir:reverse}
+.lightpill.blue .lp-orbs i:nth-child(5){--c:#5E5CE6;--t:7.3s;--dir:reverse}
 /* Green variant for Save, on its own rhythm */
 .lightpill.green .lp-orbs i:nth-child(1){--c:#30D158;--t:6.4s;--dir:reverse}
 .lightpill.green .lp-orbs i:nth-child(2){--c:#66E08A;--t:8.2s;--dir:normal}
@@ -347,7 +353,7 @@ nav button.on{opacity:1;color:var(--tint)}
       <div class="hint" id="hint"></div>
     </div>
     <div class="clock" id="clock">0:00:00</div>
-    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.03</div></div>
+    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.04</div></div>
   </section>
 
   <section class="page" id="stats">
@@ -426,7 +432,7 @@ nav button.on{opacity:1;color:var(--tint)}
     <div class="err" id="rnErr"></div>
     <div class="stack">
       <button class="pill lightpill green" id="rnSave"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Save</span></button>
-      <button class="pill lightpill grey alt" id="rnResume" hidden><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Resume</span></button>
+      <button class="pill lightpill blue" id="rnResume" hidden><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Resume</span></button>
       <button class="pill lightpill grey" id="rnCancel"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Cancel</span></button>
     </div>
   </div>

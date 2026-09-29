@@ -43,7 +43,7 @@ body{
 }
 .backdrop{
   position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:var(--bgbase);
-  will-change:transform,filter;transform:translateZ(0);filter:saturate(1) brightness(1);
+  will-change:transform,filter;transform:translateZ(0);transform-origin:50% 0;filter:saturate(1) brightness(1);
 }
 .glow{
   position:absolute;inset:0;opacity:0;pointer-events:none;will-change:opacity;transform:translateZ(0);
@@ -353,7 +353,7 @@ nav button.on{opacity:1;color:var(--tint)}
       <div class="hint" id="hint"></div>
     </div>
     <div class="clock" id="clock">0:00:00</div>
-    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.07</div></div>
+    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.08</div></div>
   </section>
 
   <section class="page" id="stats">
@@ -677,6 +677,7 @@ document.addEventListener("visibilitychange", () => { lastFrame = 0; });
    It is computed every frame and the filter never switches off (it rests at neutral values),
    so Safari never has to swap the layer, which is what caused the unwanted flicker. */
 const backdropEl = document.querySelector(".backdrop");
+const BG_ZOOM = 1.12;   /* background is enlarged from the top edge so it reaches past the bottom of the window */
 const REST  = { sat:1,   br:1,    sc:1,    rot:0 };
 const HOLD  = { sat:1.5, br:1.04, sc:1.06, rot:0 };   /* while the finger is down */
 const PEAK  = { sat:1.9, br:1.1,  sc:1.14, rot:2 };   /* 35% into the flash */
@@ -696,7 +697,7 @@ function applyPulse(now, dt){
     else cur = u < 0.35 ? mix(pulseFrom, PEAK, ease(u / 0.35)) : mix(PEAK, REST, ease((u - 0.35) / 0.65));
   } else cur = mix(REST, HOLD, pressAmt);
   backdropEl.style.filter = "saturate(" + cur.sat.toFixed(3) + ") brightness(" + cur.br.toFixed(3) + ")";
-  backdropEl.style.transform = "translateZ(0) scale(" + cur.sc.toFixed(4) + ") rotate(" + cur.rot.toFixed(3) + "deg)";
+  backdropEl.style.transform = "translateZ(0) scale(" + (cur.sc * BG_ZOOM).toFixed(4) + ") rotate(" + cur.rot.toFixed(3) + "deg)";
 }
 function setGlow(){}
 function flash(){ pulseFrom = { ...cur }; pulseStart = performance.now(); }

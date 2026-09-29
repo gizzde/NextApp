@@ -1012,7 +1012,7 @@ function renderStats(){
       if (n === 3 || n === 4) n = 5; else if (n === 5) n = 7; else if (n > 5) n += 2;
       if (donut.slices.length === 1) n += 19;   /* a single full ring gets 19 extra lights */
       n = Math.min(donut.slices.length === 1 ? 40 : 14, n);
-      const cs = ["--c1", "--c2", "--c3"], ws = [23, 19.2, 21.8], ts = [6, 7.5, 8.5, 6.8, 9.2];
+      const cs = ["--c1", "--c2", "--c3"], ws = [26.5, 22.1, 25.1], ts = [6, 7.5, 8.5, 6.8, 9.2];
       for (let i = 0; i < n; i++){
         const b = document.createElement("b");
         const f1 = (i * 0.618) % 1, f2 = (i * 0.382 + 0.2) % 1;

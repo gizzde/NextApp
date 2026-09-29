@@ -353,7 +353,7 @@ nav button.on{opacity:1;color:var(--tint)}
       <div class="hint" id="hint"></div>
     </div>
     <div class="clock" id="clock">0:00:00</div>
-    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.04</div></div>
+    <div class="lens" id="lens"><div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><button class="big" id="big">NEXT</button><div class="ver">Version 1.05</div></div>
   </section>
 
   <section class="page" id="stats">
@@ -862,6 +862,7 @@ $("rnResume").onclick = () => {
   state.current = { label: name, start };
   sensation();
   closeRename(); persist(); render();
+  document.querySelector('nav button[data-p="timer"]').click();
   toast("Resumed " + name);
 };
 $("rnInput").addEventListener("keydown", e => { if (e.key === "Enter") saveRename(); });

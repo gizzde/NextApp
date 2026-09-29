@@ -1010,9 +1010,10 @@ function renderStats(){
       /* Longer arcs get more lights so they never look empty */
       const raw = Math.round(sl.s / 32);
       let n;
-      if (sl.s < 30) n = 1;            /* shortest arcs: 1 light */
-      else if (sl.s < 56) n = 2;       /* short arcs: 2 lights */
-      else if (raw <= 2) n = 4;        /* a little longer: 4 lights */
+      if (sl.s < 30) n = 1;            /* under 30 degrees: 1 light */
+      else if (sl.s < 40) n = 2;       /* 30 to 40: 2 lights */
+      else if (sl.s < 60) n = 4;       /* 40 to 60: 4 lights */
+      else if (sl.s < 80) n = 5;       /* 60 to 80: 5 lights */
       else if (raw <= 4) n = 7;        /* medium arcs: 7 lights */
       else if (raw === 5) n = 11;      /* long arcs: 11 lights */
       else n = raw + 6;                /* longer still: keeps growing with length */

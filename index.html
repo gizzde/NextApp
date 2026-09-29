@@ -1007,11 +1007,17 @@ function renderStats(){
     donut.slices.forEach(sl => {
       const el = document.createElement("div"); el.className = "pl-slice";
       el.style.cssText = "--c:" + sl.color + ";--a:" + sl.a.toFixed(2) + "deg;--s:" + sl.s.toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
-      /* Longer arcs get more lights (about one per 32 degrees, boosted on long arcs, 2 to 14) so they never look empty */
-      let n = Math.max(2, Math.round(sl.s / 32));
-      if (n === 3 || n === 4) n = 5; else if (n === 5) n = 7; else if (n > 5) n += 2;
+      /* Longer arcs get more lights so they never look empty */
+      const raw = Math.round(sl.s / 32);
+      let n;
+      if (sl.s < 30) n = 1;            /* shortest arcs: 1 light */
+      else if (sl.s < 56) n = 2;       /* short arcs: 2 lights */
+      else if (raw <= 2) n = 4;        /* a little longer: 4 lights */
+      else if (raw <= 4) n = 7;        /* medium arcs: 7 lights */
+      else if (raw === 5) n = 11;      /* long arcs: 11 lights */
+      else n = raw + 6;                /* longer still: keeps growing with length */
       if (donut.slices.length === 1) n += 19;   /* a single full ring gets 19 extra lights */
-      n = Math.min(donut.slices.length === 1 ? 40 : 14, n);
+      n = Math.min(donut.slices.length === 1 ? 40 : 20, n);
       const cs = ["--c1", "--c2", "--c3"], ws = [26.5, 22.1, 25.1], ts = [6, 7.5, 8.5, 6.8, 9.2];
       for (let i = 0; i < n; i++){
         const b = document.createElement("b");

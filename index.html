@@ -82,6 +82,8 @@ body{
 
 /* Timer */
 #timer{align-items:center;justify-content:center;text-align:center;gap:26px}
+/* Activity name, hint and clock sit 90px higher; the NEXT button keeps its place */
+#timer .status,#timer .clock{position:relative;top:-90px}
 .status{min-height:84px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 12px}
 .activity{font-size:1.45rem;font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
 .hint{color:var(--muted);font-size:1rem}

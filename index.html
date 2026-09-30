@@ -172,7 +172,7 @@ h2{font-size:1.1rem;font-weight:600;margin:26px 6px 8px}
 .legend .nm{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
 .legend .pc{color:var(--muted);font-variant-numeric:tabular-nums}
 .legend .du{font-weight:600;font-variant-numeric:tabular-nums;min-width:62px;text-align:right}
-.legend li,.list .l{cursor:pointer}
+.legend li,.list .l,.list .it .d{cursor:pointer}
 .legend li:active,.list .it:active{opacity:.6}
 .chev{color:var(--muted);font-size:1.1rem;margin-left:-2px}
 .dialog .timerow{margin-top:10px;text-align:left}
@@ -827,7 +827,7 @@ $("cfNo").onclick = closeConfirm;
 $("confirmScrim").addEventListener("click", e => { if (e.target.id === "confirmScrim") closeConfirm(); });
 $("sessions").addEventListener("click", e => {
   const b = e.target.closest(".trash"); if (b) { askDelete(b.dataset.id); return; }
-  const l = e.target.closest(".l"); if (l) askRename("session", l.dataset.id);
+  const row = e.target.closest(".it"), l = row && row.querySelector(".l"); if (l) askRename("session", l.dataset.id);   /* name, time range and duration all open Edit session */
 });
 
 /* ---------- rename ---------- */

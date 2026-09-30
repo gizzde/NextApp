@@ -147,13 +147,13 @@ h2{font-size:1.1rem;font-weight:600;margin:26px 6px 8px}
 .donut .pielights{position:absolute;left:50%;top:6px;width:min(70vw,250px);margin-left:calc(min(70vw,250px) / -2);aspect-ratio:1;pointer-events:none;
   -webkit-mask:radial-gradient(circle closest-side, transparent 62.5%, #000 63.5%, #000 88.5%, transparent 89.5%);
   mask:radial-gradient(circle closest-side, transparent 62.5%, #000 63.5%, #000 88.5%, transparent 89.5%)}
-.pl-slice{position:absolute;inset:0;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 55%, #fff);--c3:color-mix(in srgb, var(--c) 80%, #000);
-  filter:blur(7px) saturate(140%);opacity:.9;
+.pl-slice{position:absolute;inset:0;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 66%, #fff);--c3:color-mix(in srgb, var(--c) 84%, #000);
+  filter:blur(7px) saturate(170%);opacity:.95;
   -webkit-mask:conic-gradient(from var(--a), #000 var(--s), transparent 0);mask:conic-gradient(from var(--a), #000 var(--s), transparent 0)}
 .pl-slice.full{-webkit-mask:none;mask:none}
 .pl-slice b{position:absolute;inset:0;will-change:transform;animation-name:plswing;animation-duration:var(--t,7s);animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:var(--dir,normal);animation-delay:var(--dl,0s)}
 .pl-slice b::before{content:"";position:absolute;left:50%;top:12%;width:var(--w,26%);aspect-ratio:1;margin-left:calc(var(--w,26%) / -2);margin-top:calc(var(--w,26%) / -2);border-radius:50%;
-  background:radial-gradient(circle closest-side, var(--bc) 0%, color-mix(in srgb, var(--bc) 50%, transparent) 50%, transparent 100%)}
+  background:radial-gradient(circle closest-side, var(--bc) 0%, color-mix(in srgb, var(--bc) 65%, transparent) 52%, transparent 100%)}
 .pl-slice b:nth-child(1){--bc:var(--c1);--w:23%;--t:6s;--dl:0s}
 .pl-slice b:nth-child(2){--bc:var(--c2);--w:19.2%;--t:7.5s;--dl:-2s;--dir:reverse}
 .pl-slice b:nth-child(3){--bc:var(--c3);--w:21.8%;--t:8.5s;--dl:-4s}
@@ -1027,7 +1027,7 @@ function donutSVG(groups, total, colors){
     const len = g.ms / total * C;
     const color = colors[g.label.toLowerCase()];
     if (groups.length === 1){
-      ring.appendChild(mk("circle", { cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.14 }));
+      ring.appendChild(mk("circle", { cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.22 }));
       svg.slices.push({ a:0, s:360, color });
     } else {
       /* Flat ends keep each arc exactly proportional. A thin gap separates slices,
@@ -1035,7 +1035,7 @@ function donutSVG(groups, total, colors){
       const draw = len > GAP * 3 ? len - GAP : Math.max(MIN, len * 0.7);
       const start = pos + (len - draw) / 2;
       ring.appendChild(mk("circle", {
-        cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.14,
+        cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.22,
         "stroke-dasharray": draw + " " + (C - draw), "stroke-dashoffset": -start
       }));
       svg.slices.push({ a:start / C * 360, s:draw / C * 360, color });

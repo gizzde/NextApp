@@ -568,9 +568,9 @@ function toast(msg){
 }
 
 /* ---------- colors (vivid, fully saturated) ---------- */
-const PALETTE = ["#0A84FF","#FF9F0A","#FF2D55","#30D158","#BF5AF2","#00D2F0","#FFD60A","#5E5CE6","#FF3B30","#00E0A4","#FF4FD8","#A6E22E"];
-/* Palette order follows the color wheel (red, orange, yellow, green, teal, blue, purple, pink), row by row */
-const SWATCHES = ["#FF3B30", "#FF6A00", "#FF9F0A", "#FFAB00", "#FFD60A", "#A6E22E", "#64DD17", "#30D158", "#00E0A4", "#00BFA5", "#00D2F0", "#00B0FF", "#0A84FF", "#5E5CE6", "#7C4DFF", "#BF5AF2", "#D500F9", "#FF4FD8", "#FF80AB", "#FF2D55"];
+const PALETTE = ["#0A84FF","#FF8A00","#1FBF4A","#FF3FD0","#FFD60A","#00D2F0","#FF3B30","#B44FF0","#A6E22E","#5A48F0","#00C9A7","#FF7FA8"];   /* well separated hues, in an order where neighbouring slices contrast */
+/* Palette order follows the color wheel, row by row: every color is clearly different from its neighbours */
+const SWATCHES = ["#FF3B30","#FF8A00","#FFD60A","#A6E22E","#1FBF4A","#00C9A7","#00D2F0","#0A84FF","#5A48F0","#B44FF0","#FF3FD0","#FF7FA8","#A2845E","#A0A0A8","#3A3A3C"];
 function colorMap(noCustom){
   const map = {}; let n = 0;
   const custom = noCustom ? {} : (state.colors || {});

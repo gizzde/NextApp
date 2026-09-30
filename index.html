@@ -270,9 +270,15 @@ nav button.on{opacity:1;color:var(--tint)}
 .field.bare{-webkit-appearance:none;appearance:none;background:transparent;background-color:transparent;border:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:999px;padding:14px 20px}
 .dialog .fieldbox{margin:4px 0 6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px}
-.chips button{border:1px solid var(--glass-edge);background:var(--glass);color:var(--ink);font:inherit;font-size:.95rem;padding:8px 14px;border-radius:999px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chips button{flex:1 1 auto;border:1px solid var(--glass-edge);background:var(--glass);color:var(--ink);font:inherit;font-size:.95rem;padding:8px 14px;border-radius:999px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .timerow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:6px 6px 6px 14px;border-radius:16px;background:var(--glass)}
 .timerow label{font-weight:500}
+.colorbtn{font:inherit;font-size:.95rem;padding:8px 14px;border-radius:12px;border:none;background:var(--glass-strong);color:var(--ink);display:flex;align-items:center;gap:8px;cursor:pointer}
+.cdot{width:18px;height:18px;border-radius:50%;background:var(--cc,#0A84FF);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:14px 0 16px}
+.swatches button{aspect-ratio:1;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:var(--sw);cursor:pointer;padding:0}
+.swatches button.on{outline:3px solid var(--ink);outline-offset:2px}
+.swatches button:active{transform:scale(.92)}
 .timerow input{font:inherit;font-size:1.05rem;padding:8px 12px;border-radius:12px;border:none;background:var(--glass-strong);color:var(--ink)}
 /* Start button: clear glass with the same drifting lights as the NEXT button */
 .lightpill{
@@ -448,6 +454,7 @@ nav button.on{opacity:1;color:var(--tint)}
     <h3 id="rnTitle">Rename</h3>
     <p id="rnText"></p>
     <div class="fieldbox"><input class="field bare" id="rnInput" type="text" maxlength="80" autocomplete="off" enterkeyhint="done"></div>
+    <div class="timerow" id="rnColorRow" hidden><label>Color</label><button class="colorbtn" id="rnColor" type="button"><span class="cdot" id="rnDot"></span>Choose</button></div>
     <div id="rnTimes" hidden>
       <div class="timerow"><label for="rnStart">Start</label><input id="rnStart" type="datetime-local"></div>
       <div class="timerow"><label for="rnEnd">End</label><input id="rnEnd" type="datetime-local"></div>
@@ -458,6 +465,17 @@ nav button.on{opacity:1;color:var(--tint)}
       <button class="pill lightpill green" id="rnSave"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Save</span></button>
       <button class="pill lightpill blue" id="rnResume" hidden><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Resume</span></button>
       <button class="pill lightpill grey" id="rnCancel"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim center" id="colorScrim">
+  <div class="sheet glass dialog" role="dialog" aria-labelledby="clTitle">
+    <h3 id="clTitle">Choose color</h3>
+    <div class="swatches" id="swatches"></div>
+    <div class="stack">
+      <button class="pill" id="clAuto" type="button">Automatic</button>
+      <button class="pill lightpill grey" id="clCancel"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Cancel</span></button>
     </div>
   </div>
 </div>
@@ -496,7 +514,7 @@ nav button.on{opacity:1;color:var(--tint)}
 
 <script>
 const LS_KEY = "timelog-v1";
-let state = { current: null, sessions: [], updatedAt: 0 };
+let state = { current: null, sessions: [], colors: {}, updatedAt: 0 };
 let range = "today";
 const $ = id => document.getElementById(id);
 
@@ -551,9 +569,12 @@ function toast(msg){
 
 /* ---------- colors (vivid, fully saturated) ---------- */
 const PALETTE = ["#0A84FF","#FF9F0A","#FF2D55","#30D158","#BF5AF2","#00D2F0","#FFD60A","#5E5CE6","#FF3B30","#00E0A4","#FF4FD8","#A6E22E"];
-function colorMap(){
+/* Palette order follows the color wheel (red, orange, yellow, green, teal, blue, purple, pink), row by row */
+const SWATCHES = ["#FF3B30", "#FF6A00", "#FF9F0A", "#FFAB00", "#FFD60A", "#A6E22E", "#64DD17", "#30D158", "#00E0A4", "#00BFA5", "#00D2F0", "#00B0FF", "#0A84FF", "#5E5CE6", "#7C4DFF", "#BF5AF2", "#D500F9", "#FF4FD8", "#FF80AB", "#FF2D55"];
+function colorMap(noCustom){
   const map = {}; let n = 0;
-  const add = l => { const k = l.toLowerCase(); if (!(k in map)) map[k] = PALETTE[n++ % PALETTE.length]; };
+  const custom = noCustom ? {} : (state.colors || {});
+  const add = l => { const k = l.toLowerCase(); if (!(k in map)){ const auto = PALETTE[n++ % PALETTE.length]; map[k] = custom[k] || auto; } };
   state.sessions.forEach(s => add(s.label));
   if (state.current) add(state.current.label);
   return map;
@@ -588,14 +609,16 @@ function pickedTime(){
   if (t > Date.now() + 60000) t -= 864e5;
   return t;
 }
-function recentLabels(exclude){
-  const seen = new Set(), out = [];
-  if (exclude) seen.add(exclude.toLowerCase());
-  for (let i = state.sessions.length - 1; i >= 0 && out.length < 6; i--){
-    const l = state.sessions[i].label;
-    if (!seen.has(l.toLowerCase())) { seen.add(l.toLowerCase()); out.push(l); }
-  }
-  return out;
+function usedLabels(exclude){
+  /* Most used first (number of sessions), ties go to the more recent one. */
+  const info = {};
+  state.sessions.forEach((s, i) => {
+    const k = s.label.toLowerCase();
+    if (!info[k]) info[k] = { label: s.label, count: 0, last: 0 };
+    info[k].count++; info[k].last = i; info[k].label = s.label;
+  });
+  const ex = exclude ? exclude.toLowerCase() : null;
+  return Object.keys(info).filter(k => k !== ex).sort((a, b) => info[b].count - info[a].count || info[b].last - info[a].last).slice(0, 16).map(k => info[k].label);
 }
 function openSheet(){
   timeTouched = false;
@@ -610,13 +633,20 @@ function openSheet(){
   $("goLabel").textContent = sw ? "Start next" : "Start";
   $("stopOnly").hidden = !sw;
   const chips = $("chips"); chips.innerHTML = "";
-  recentLabels(sw ? state.current.label : null).forEach(l => {
+  usedLabels(sw ? state.current.label : null).forEach(l => {
     const c = document.createElement("button");
     c.textContent = l;
     c.onclick = () => submitNext(l);
     chips.appendChild(c);
   });
   showScrim("sheetScrim");
+  /* The chips stretch to fill the row, and only as many as fit in two rows are kept. */
+  requestAnimationFrame(() => {
+    const btns = Array.from(chips.children); if (!btns.length) return;
+    const tops = Array.from(new Set(btns.map(b => b.offsetTop))).sort((a, b) => a - b);
+    const limit = tops.length > 1 ? tops[1] : tops[0];
+    btns.forEach(b => { if (b.offsetTop > limit) b.remove(); });
+  });
   setTimeout(() => $("what").focus(), 60);
 }
 function closeSheet(){ hideScrim("sheetScrim"); $("what").blur(); }
@@ -802,12 +832,16 @@ $("sessions").addEventListener("click", e => {
 
 /* ---------- rename ---------- */
 let renameTarget = null;
+let colorPick = { changed:false, value:null };
+function paintColorDot(c){ $("rnDot").style.setProperty("--cc", c); }
 function askRename(kind, key){
   renameTarget = { kind, key };
   $("rnErr").textContent = "";
   if (kind === "activity"){
     const n = state.sessions.filter(s => s.label.toLowerCase() === key.toLowerCase()).length;
-    $("rnTitle").textContent = "Rename activity";
+    $("rnTitle").textContent = "Adjust activity";
+    colorPick = { changed:false, value:null };
+    paintColorDot((colorMap()[key.toLowerCase()]));
     $("rnText").textContent = "Changes " + n + (n === 1 ? " session" : " sessions") + ". Use an existing name to merge them.";
     $("rnInput").value = key;
   } else {
@@ -821,6 +855,7 @@ function askRename(kind, key){
     updateDur();
   }
   $("rnTimes").hidden = kind !== "session";
+  $("rnColorRow").hidden = kind !== "activity";
   /* Resume is offered only for the most recent session, and only when no timer is running. */
   const latest = state.sessions.reduce((a, b) => (!a || b.end > a.end) ? b : a, null);
   $("rnResume").hidden = !(kind === "session" && !state.current && latest && latest.id === key);
@@ -861,6 +896,12 @@ function saveRename(){
     const k = key.toLowerCase();
     state.sessions.forEach(s => { if (s.label.toLowerCase() === k) s.label = name; });
     if (state.current && state.current.label.toLowerCase() === k) state.current.label = name;
+    /* Keep the chosen color with the activity, also when it is renamed. */
+    state.colors = state.colors || {};
+    const nk = name.toLowerCase(), oldColor = state.colors[k];
+    if (k !== nk) delete state.colors[k];
+    if (colorPick.changed){ if (colorPick.value) state.colors[nk] = colorPick.value; else delete state.colors[nk]; }
+    else if (oldColor && k !== nk && !state.colors[nk]) state.colors[nk] = oldColor;
   } else {
     const s = state.sessions.find(x => x.id === key); if (!s) return;
     const { start, end } = editedTimes();
@@ -871,7 +912,7 @@ function saveRename(){
     s.label = name; s.start = start; s.end = end;
     state.sessions.sort((a,b) => a.start - b.start);
   }
-  persist(); render(); closeRename(); toast(kind === "session" ? "Session updated" : "Renamed to " + name);
+  persist(); render(); closeRename(); toast(kind === "session" ? "Session updated" : "Activity updated");
 }
 $("rnSave").onclick = saveRename;
 $("rnCancel").onclick = closeRename;
@@ -891,6 +932,30 @@ $("rnResume").onclick = () => {
 };
 $("rnInput").addEventListener("keydown", e => { if (e.key === "Enter") saveRename(); });
 $("renameScrim").addEventListener("click", e => { if (e.target.id === "renameScrim") closeRename(); });
+
+/* ---------- color palette ---------- */
+function pickColor(value){
+  colorPick = { changed:true, value };
+  const key = renameTarget ? renameTarget.key.toLowerCase() : "";
+  paintColorDot(value || colorMap(true)[key] || PALETTE[0]);
+  hideScrim("colorScrim");
+}
+$("rnColor").onclick = () => {
+  $("rnInput").blur();
+  const cur = colorPick.changed ? colorPick.value : ((state.colors || {})[renameTarget.key.toLowerCase()] || null);
+  const box = $("swatches"); box.innerHTML = "";
+  SWATCHES.forEach(c => {
+    const b = document.createElement("button"); b.type = "button";
+    b.style.setProperty("--sw", c); b.setAttribute("aria-label", c);
+    if (cur && cur.toLowerCase() === c.toLowerCase()) b.classList.add("on");
+    b.onclick = () => pickColor(c);
+    box.appendChild(b);
+  });
+  showScrim("colorScrim");
+};
+$("clAuto").onclick = () => pickColor(null);
+$("clCancel").onclick = () => hideScrim("colorScrim");
+$("colorScrim").addEventListener("click", e => { if (e.target.id === "colorScrim") hideScrim("colorScrim"); });
 
 /* ---------- stats ---------- */
 let custom = null; /* { from: ms at local midnight, to: ms at next midnight after last day } */
@@ -1186,7 +1251,7 @@ function syncSlider(box, animate){
 }
 function stepPill(pill, now){
   const s = pill._s, dt = Math.min(0.032, s.last ? (now - s.last) / 1000 : 0.016); s.last = now;
-  const fast = 560, slow = 330;                      /* stiffness of leading and trailing edge */
+  const fast = 691, slow = 407;                      /* stiffness of leading and trailing edge */
   const kL = s.lead === "L" ? fast : slow, kR = s.lead === "R" ? fast : slow;
   const cL = 2 * Math.sqrt(kL) * 0.92, cR = 2 * Math.sqrt(kR) * 0.92;   /* just under critical: a soft settle */
   /* Two small sub-steps per frame keep the springs stable and silky. */
@@ -1252,7 +1317,7 @@ function render(){ renderTimer(); renderStats(); }
 /* ---------- start ---------- */
 const local = loadLocal();
 if (local){
-  state = { current: local.current || null, sessions: local.sessions || [], updatedAt: local.updatedAt || 0 };
+  state = { current: local.current || null, sessions: local.sessions || [], colors: local.colors || {}, updatedAt: local.updatedAt || 0 };
   /* Give every old session a unique id so delete always targets the right one. */
   const seen = new Set();
   state.sessions.forEach(s => {

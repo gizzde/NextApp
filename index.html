@@ -150,6 +150,7 @@ h2{font-size:1.1rem;font-weight:600;margin:26px 6px 8px}
 .pl-slice{position:absolute;inset:0;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 55%, #fff);--c3:color-mix(in srgb, var(--c) 80%, #000);
   filter:blur(7px) saturate(140%);opacity:.9;
   -webkit-mask:conic-gradient(from var(--a), #000 var(--s), transparent 0);mask:conic-gradient(from var(--a), #000 var(--s), transparent 0)}
+.pl-slice.full{-webkit-mask:none;mask:none}
 .pl-slice b{position:absolute;inset:0;will-change:transform;animation-name:plswing;animation-duration:var(--t,7s);animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:var(--dir,normal);animation-delay:var(--dl,0s)}
 .pl-slice b::before{content:"";position:absolute;left:50%;top:12%;width:var(--w,26%);aspect-ratio:1;margin-left:calc(var(--w,26%) / -2);margin-top:calc(var(--w,26%) / -2);border-radius:50%;
   background:radial-gradient(circle closest-side, var(--bc) 0%, color-mix(in srgb, var(--bc) 50%, transparent) 50%, transparent 100%)}
@@ -1070,7 +1071,7 @@ function renderStats(){
     d.appendChild(donut);
     const gl = document.createElement("div"); gl.className = "pielights"; gl.setAttribute("aria-hidden", "true");
     donut.slices.forEach(sl => {
-      const el = document.createElement("div"); el.className = "pl-slice";
+      const el = document.createElement("div"); el.className = "pl-slice" + (sl.s >= 359.9 ? " full" : "");   /* a full ring needs no sector mask, which would leave a seam at the top */
       el.style.cssText = "--c:" + sl.color + ";--a:" + sl.a.toFixed(2) + "deg;--s:" + sl.s.toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
       /* Longer arcs get more lights so they never look empty */
       const raw = Math.round(sl.s / 32);

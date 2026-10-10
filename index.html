@@ -76,7 +76,7 @@ body{
 }
 .app{position:relative;z-index:1;height:100%;max-width:560px;margin:0 auto;padding-top:env(safe-area-inset-top,0px)}
 /* iOS 26 paints the status bar strip in the theme-color, so the same color fades into the animated background below it and no edge shows */
-.app::before{content:"";position:fixed;top:0;left:0;right:0;height:72px;z-index:-1;pointer-events:none;background:linear-gradient(to bottom, var(--bgbase) 0%, color-mix(in srgb, var(--bgbase) 55%, transparent) 40%, color-mix(in srgb, var(--bgbase) 0%, transparent) 100%)}
+.app::before{content:"";position:fixed;top:0;left:0;right:0;height:170px;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,var(--bgbase) 0%,color-mix(in srgb, var(--bgbase) 94%, transparent) 8%,color-mix(in srgb, var(--bgbase) 82%, transparent) 18%,color-mix(in srgb, var(--bgbase) 66%, transparent) 30%,color-mix(in srgb, var(--bgbase) 48%, transparent) 42%,color-mix(in srgb, var(--bgbase) 32%, transparent) 54%,color-mix(in srgb, var(--bgbase) 19%, transparent) 66%,color-mix(in srgb, var(--bgbase) 9%, transparent) 78%,color-mix(in srgb, var(--bgbase) 3%, transparent) 90%,color-mix(in srgb, var(--bgbase) 0%, transparent) 100%)}
 .page{height:100%;overflow-y:auto;padding:12px 16px calc(110px + env(safe-area-inset-bottom,0px));display:none;-webkit-overflow-scrolling:touch}
 .page.active{display:flex;flex-direction:column}
 
@@ -135,6 +135,7 @@ h2{font-size:1.1rem;font-weight:600;margin:26px 6px 8px}
 .seg button{flex:1;border:none;background:none;color:var(--ink);font:inherit;font-size:.95rem;font-weight:500;padding:9px 0;border-radius:999px;cursor:pointer;transition:background .2s}
 .seg button{position:relative;z-index:1;transition:font-weight .2s}
 .seg button.on{font-weight:600}
+.seg button.long{letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #range button{font-size:.86rem}
 .period{display:block;margin:10px auto 0;border:none;background:none;color:var(--tint);font:inherit;font-weight:600;font-size:.95rem;cursor:pointer;padding:6px 10px}
 .dialog input[type=date]{max-width:62%}
@@ -276,6 +277,27 @@ nav button.on{opacity:1;color:var(--tint)}
 .timerow label{font-weight:500}
 .colorbtn{font:inherit;font-size:.95rem;padding:8px 14px;border-radius:12px;border:none;background:var(--glass-strong);color:var(--ink);display:flex;align-items:center;gap:8px;cursor:pointer}
 .cdot{width:18px;height:18px;border-radius:50%;background:var(--cc,#0A84FF);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.achead{display:flex;align-items:center;gap:10px;margin:0 4px 20px}   /* the invisible period button above already adds about 20px, so the header sits centered between the period buttons and the chart */
+.achead h2{margin:0;font-size:1.25rem;font-weight:650;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.achead .dot{flex:none}
+.backbtn{flex:none;width:38px;height:38px;border-radius:50%;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}   /* glass look comes from the .glass class, same as the period buttons */
+.backbtn:active{transform:scale(.92)}
+#actCap{font-size:.95rem;font-weight:600;margin:2px 2px 10px;min-height:1.3em}
+#actChart{position:relative}
+#actChart svg{width:100%;height:auto;display:block}
+.barlights{position:absolute;left:0;top:0;width:100%;aspect-ratio:320 / 190;pointer-events:none}
+.bl{position:absolute;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 66%, #fff);--c3:color-mix(in srgb, var(--c) 94%, #000);filter:blur(var(--bb,5px)) saturate(170%);opacity:1;clip-path:inset(0 round 4px 4px 0 0);transition:opacity .2s ease}
+.bl b{position:absolute;inset:0;will-change:transform;animation-name:bldrift;animation-duration:var(--t,7s);animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:var(--dir,normal);animation-delay:var(--dl,0s)}
+.bl b::before{content:"";position:absolute;left:50%;top:var(--top,50%);width:var(--bw,190%);aspect-ratio:1;margin-left:calc(var(--bw,190%) / -2);margin-top:calc(var(--bw,190%) / -2);border-radius:50%;background:radial-gradient(circle closest-side, var(--bc) 0%, color-mix(in srgb, var(--bc) 65%, transparent) 52%, transparent 100%)}
+@keyframes bldrift{
+  0%{transform:translateY(var(--y0))}
+  33%{transform:translateY(var(--y1)) scale(1.06)}
+  66%{transform:translateY(var(--y2)) scale(.95)}
+  100%{transform:translateY(var(--y0))}
+}
+#actChart text{fill:var(--muted);font-size:9px;font-family:inherit}
+#actChart .grid{stroke:var(--glass-edge);stroke-width:1}
+#actChart rect.bar{transition:opacity .2s ease}
 .swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:14px 0 16px}
 .swatches button{aspect-ratio:1;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:var(--sw);cursor:pointer;padding:0}
 .swatches button.on{outline:3px solid var(--ink);outline-offset:2px}
@@ -343,6 +365,12 @@ nav button.on{opacity:1;color:var(--tint)}
 .lightpill.blue .lp-orbs i:nth-child(3){--c:#007AFF;--t:5.7s;--dir:normal}
 .lightpill.blue .lp-orbs i:nth-child(4){--c:#64D2FF;--t:9.1s;--dir:reverse}
 .lightpill.blue .lp-orbs i:nth-child(5){--c:#5E5CE6;--t:7.3s;--dir:reverse}
+/* Orange variant for Adjust activity */
+.lightpill.orange .lp-orbs i:nth-child(1){--c:#FF9F0A;--t:6.9s;--dir:normal}
+.lightpill.orange .lp-orbs i:nth-child(2){--c:#FFB340;--t:5.8s;--dir:reverse}
+.lightpill.orange .lp-orbs i:nth-child(3){--c:#FF8A00;--t:8.8s;--dir:reverse}
+.lightpill.orange .lp-orbs i:nth-child(4){--c:#FFCC66;--t:7.4s;--dir:normal}
+.lightpill.orange .lp-orbs i:nth-child(5){--c:#FF6A00;--t:9.6s;--dir:normal}
 /* Green variant for Save, on its own rhythm */
 .lightpill.green .lp-orbs i:nth-child(1){--c:#30D158;--t:6.4s;--dir:reverse}
 .lightpill.green .lp-orbs i:nth-child(2){--c:#66E08A;--t:8.2s;--dir:normal}
@@ -363,6 +391,7 @@ nav button.on{opacity:1;color:var(--tint)}
 .stack{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .stack .row{display:flex;gap:10px}
 .dialog{max-width:340px;text-align:center;padding:22px 18px 16px}
+#pdTitle{margin-bottom:14px}   /* a bit more room between the Choose period title and the date rows */
 .dialog p{color:var(--muted);margin:6px 0 18px;overflow-wrap:anywhere}
 /* Hidden toast sits fully above the screen and is invisible, so no empty pill peeks out near the notch */
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,calc(-100% - 40px - env(safe-area-inset-top,0px)));opacity:0;visibility:hidden;z-index:30;padding:12px 18px;border-radius:999px;font-weight:500;transition:transform .35s cubic-bezier(.2,1.2,.4,1),opacity .25s,visibility 0s linear .35s;max-width:90vw;text-align:center}
@@ -397,6 +426,20 @@ nav button.on{opacity:1;color:var(--tint)}
       <button data-r="custom">Custom</button>
     </div>
     <button class="period" id="periodLabel" hidden></button>
+    <div id="actView" style="display:none">
+      <div class="achead">
+        <button class="backbtn glass" id="actBack" type="button" aria-label="Back to statistics"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="dot" id="actDot"></span><h2 id="actName"></h2>
+      </div>
+      <div class="card glass">
+        <div id="actCap"></div>
+        <div id="actChart"></div>
+      </div>
+      <div id="actSessions"></div>
+      <div class="tools">
+        <button class="pill lightpill orange" id="actAdjust" type="button"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Adjust activity</span></button>
+      </div>
+    </div>
     <div class="card glass" id="summary"></div>
     <div id="sessions"></div>
     <div class="tools">
@@ -484,7 +527,6 @@ nav button.on{opacity:1;color:var(--tint)}
 <div class="scrim center" id="periodScrim">
   <div class="sheet glass dialog" role="dialog" aria-labelledby="pdTitle">
     <h3 id="pdTitle">Choose period</h3>
-    <p>Both days are included.</p>
     <div class="timerow"><label for="pdFrom">From</label><input id="pdFrom" type="date"></div>
     <div class="timerow"><label for="pdTo">To</label><input id="pdTo" type="date"></div>
     <div class="err" id="pdErr"></div>
@@ -826,10 +868,10 @@ $("cfYes").onclick = () => {
 };
 $("cfNo").onclick = closeConfirm;
 $("confirmScrim").addEventListener("click", e => { if (e.target.id === "confirmScrim") closeConfirm(); });
-$("sessions").addEventListener("click", e => {
+["sessions", "actSessions"].forEach(id => $(id).addEventListener("click", e => {
   const b = e.target.closest(".trash"); if (b) { askDelete(b.dataset.id); return; }
   const row = e.target.closest(".it"), l = row && row.querySelector(".l"); if (l) askRename("session", l.dataset.id);   /* name, time range and duration all open Edit session */
-});
+}));
 
 /* ---------- rename ---------- */
 let renameTarget = null;
@@ -897,6 +939,7 @@ function saveRename(){
     const k = key.toLowerCase();
     state.sessions.forEach(s => { if (s.label.toLowerCase() === k) s.label = name; });
     if (state.current && state.current.label.toLowerCase() === k) state.current.label = name;
+    if (actFocus && actFocus.toLowerCase() === k) actFocus = name;
     /* Keep the chosen color with the activity, also when it is renamed. */
     state.colors = state.colors || {};
     const nk = name.toLowerCase(), oldColor = state.colors[k];
@@ -993,12 +1036,22 @@ function closePeriod(){ hideScrim("periodScrim"); }
 function setRangeButton(r){
   range = r;
   document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x.dataset.r === r));
-  syncSlider($("range"), true);
-  $("periodLabel").hidden = r !== "custom";
+  /* The chosen dates replace the word Custom on its button until another period button is pressed. */
+  const cb = document.querySelector('#range button[data-r="custom"]');
+  let txt = "Custom";
   if (r === "custom" && custom){
-    const last = custom.to - 1;
-    $("periodLabel").textContent = dateInput(custom.from) === dateInput(last) ? shortDate(custom.from) : shortDate(custom.from) + " - " + shortDate(last);
+    const last = custom.to - 1, a = new Date(custom.from), b = new Date(last);
+    if (dateInput(custom.from) === dateInput(last)) txt = shortDate(custom.from);
+    else if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) txt = a.toLocaleDateString(undefined, { month: "short" }) + " " + a.getDate() + "-" + b.getDate();
+    else { const nd = d => d.toLocaleDateString(undefined, { month: "numeric", day: "numeric" }); txt = nd(a) + "-" + nd(b); }
   }
+  cb.textContent = txt; cb.classList.toggle("long", txt.length > 6);
+  /* The button grows and its text shrinks in steps with the length of the date, so short dates stay compact. */
+  const L = txt.length;
+  cb.style.flex = L > 6 ? Math.min(1.5, 1 + (L - 6) * 0.11).toFixed(2) : "";
+  cb.style.fontSize = L > 6 ? Math.max(0.78, 0.95 - (L - 6) * 0.04).toFixed(2) + "rem" : "";
+  syncSlider($("range"), true);   /* after the label, because a long date makes its button wider */
+  $("periodLabel").hidden = true; $("periodLabel").textContent = "";
   renderStats();
 }
 $("pdApply").onclick = () => {
@@ -1013,7 +1066,7 @@ $("pdCancel").onclick = closePeriod;
 $("periodScrim").addEventListener("click", e => { if (e.target.id === "periodScrim") closePeriod(); });
 $("periodLabel").onclick = openPeriod;
 function donutSVG(groups, total, colors){
-  const NS = "http://www.w3.org/2000/svg", R = 38, W = 13, C = 2 * Math.PI * R, GAP = 0.9, MIN = 0.6;
+  const NS = "http://www.w3.org/2000/svg", R = 38, W = 13, C = 2 * Math.PI * R, GAP = 0, MIN = 0.6;
   const svg = document.createElementNS(NS, "svg");
   svg.slices = [];
   svg.setAttribute("viewBox", "0 0 100 100");
@@ -1032,7 +1085,7 @@ function donutSVG(groups, total, colors){
     } else {
       /* Flat ends keep each arc exactly proportional. A thin gap separates slices,
          and very small slices keep a hairline minimum so they stay visible. */
-      const draw = len > GAP * 3 ? len - GAP : Math.max(MIN, len * 0.7);
+      const draw = Math.max(len - GAP, MIN);   /* no gap: slices touch, only hairline-small ones keep a minimum width */
       const start = pos + (len - draw) / 2;
       ring.appendChild(mk("circle", {
         cx:50, cy:50, r:R, fill:"none", stroke:color, "stroke-width":W, "stroke-opacity":0.22,
@@ -1044,13 +1097,129 @@ function donutSVG(groups, total, colors){
   });
   svg.appendChild(ring);
   const t1 = mk("text", { x:50, y:50, "text-anchor":"middle", class:"ctr-big" }); t1.textContent = durFmt(total);
-  const t2 = mk("text", { x:50, y:60, "text-anchor":"middle", class:"ctr-small" }); t2.textContent = "tracked";
-  svg.appendChild(t1); svg.appendChild(t2);
+  /* Long totals (for example 169h 34m) shrink so the text always stays inside the hole of the ring. */
+  const txt = t1.textContent; let em = 0; for (const ch of txt) em += ch === " " ? 0.3 : ch === "m" ? 0.95 : ch === "h" ? 0.62 : 0.6;
+  const fs = em * 14 > 52 ? 52 / em : 14;
+  if (fs < 14) t1.style.fontSize = fs.toFixed(2) + "px";
+  t1.setAttribute("y", (50 + fs * 0.35).toFixed(2));   /* the total sits in the exact middle of the ring */
+  svg.appendChild(t1);
   return svg;
 }
 const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
 
+/* ---------- bar chart for one activity (hours per day in the chosen period) ---------- */
+let actFocus = null;
+function dayStart(ts){ const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); }
+function addDays(ts, n){ const d = new Date(ts); d.setDate(d.getDate() + n); return d.getTime(); }
+function renderActivityView(){
+  const label = actFocus, k = label.toLowerCase();
+  const color = colorMap()[k] || PALETTE[0];
+  $("actName").textContent = label; $("actDot").style.background = color;
+  const pFrom = rangeStart(), pTo = Math.min(rangeEnd(), Date.now());
+  const first = dayStart(Math.max(pFrom, 0) || dayStart(Date.now()));
+  const nDays = Math.max(1, Math.round((dayStart(Math.max(pTo - 1, first)) - first) / 864e5) + 1);
+  const mine = state.sessions.filter(x => x.label.toLowerCase() === k);
+  if (state.current && state.current.label.toLowerCase() === k) mine.push({ start: state.current.start, end: Date.now() });
+  /* Buckets: hours for a single day, days up to about two months, then weeks, then months. */
+  const buckets = []; let kind;
+  if (nDays <= 1){ kind = "hour"; for (let h = 0; h < 24; h++){ const d = new Date(first); d.setHours(h); const e = new Date(first); e.setHours(h + 1); buckets.push({ a: d.getTime(), b: e.getTime(), lab: String(h) }); } }
+  else if (nDays <= 62){ kind = "day"; for (let i = 0; i < nDays; i++){ const a = addDays(first, i); buckets.push({ a, b: addDays(first, i + 1), lab: String(new Date(a).getDate()) }); } }
+  else if (nDays <= 400){ kind = "week"; for (let a = first; a < pTo; a = addDays(a, 7)) buckets.push({ a, b: addDays(a, 7), lab: shortDate(a) }); }
+  else { kind = "month"; const d = new Date(first); d.setDate(1); for (let a = d.getTime(); a < pTo; ){ const n = new Date(a); n.setMonth(n.getMonth() + 1); buckets.push({ a, b: n.getTime(), lab: new Date(a).toLocaleDateString(undefined, { month: "short" }) }); a = n.getTime(); } }
+  buckets.forEach(bk => {
+    const lo = Math.max(bk.a, pFrom), hi = Math.min(bk.b, pTo);
+    bk.ms = 0; if (hi > lo) mine.forEach(x => { const o = Math.min(x.end, hi) - Math.max(x.start, lo); if (o > 0) bk.ms += o; });
+  });
+  const total = buckets.reduce((t, bk) => t + bk.ms, 0), maxMs = Math.max.apply(null, buckets.map(bk => bk.ms).concat([1]));
+  /* Axis: minutes for hourly bars, hours otherwise, with a rounded top value. */
+  const unit = kind === "hour" ? 60000 : 3600000, steps = kind === "hour" ? [5, 10, 15, 20, 30, 60] : [0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 16, 24, 48, 72, 100, 150, 200, 300, 500, 1000];
+  const need = maxMs / unit; let top = steps[steps.length - 1]; for (const st of steps){ if (st >= need){ top = st; break; } }
+  const fmt = v => kind === "hour" ? Math.round(v) + "m" : (v < 1 ? Math.round(v * 60) + "m" : (Number.isInteger(v) ? v + "h" : v.toFixed(1) + "h"));
+  const W = 320, H = 190, L = 34, R = 6, T = 8, B = 24, cw = W - L - R, ch = H - T - B, n = buckets.length, slot = cw / n, bw = Math.max(2, Math.min(26, slot * 0.64));
+  const NS = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const a in at) e.setAttribute(a, at[a]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  [0, 0.5, 1].forEach(f => { const y = T + ch - f * ch; mk("line", { x1: L, x2: W - R, y1: y, y2: y, class: "grid" }); mk("text", { x: L - 5, y: y + 3, "text-anchor": "end" }, fmt(top * f)); });
+  const every = Math.max(1, Math.ceil(n / 8)), bars = [], geo = [], lights = [];
+  const longLab = bk => kind === "hour" ? String(new Date(bk.a).getHours()).padStart(2, "0") + ":00 - " + String((new Date(bk.a).getHours() + 1) % 24).padStart(2, "0") + ":00"
+    : kind === "day" ? new Date(bk.a).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+    : kind === "week" ? shortDate(bk.a) + " - " + shortDate(Math.min(bk.b, pTo) - 1)
+    : new Date(bk.a).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  buckets.forEach((bk, i) => {
+    const x = L + i * slot + (slot - bw) / 2, h = bk.ms / (top * unit) * ch;
+    const hh = Math.max(h, bk.ms > 0 ? 2 : 0);
+    const r = mk("rect", { x, y: T + ch - hh, width: bw, height: hh, rx: Math.min(4, bw / 2), fill: color, "fill-opacity": 0.4, class: "bar" });
+    bars.push(r);
+    if (bk.ms > 0) geo.push({ i, x, y: T + ch - hh, w: bw, h: hh });
+    if (i % every === 0) mk("text", { x: L + i * slot + slot / 2, y: H - 8, "text-anchor": "middle" }, kind === "day" && n <= 8 ? new Date(bk.a).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : bk.lab);
+    const hit = mk("rect", { x: L + i * slot, y: T, width: slot, height: ch + B, fill: "transparent" });
+    hit.addEventListener("click", () => { sel = sel === i ? -1 : i; paint(); });   /* tapping the selected bar again shows everything */
+  });
+  let sel = -1;
+  const allEntries = state.sessions.filter(x => x.label.toLowerCase() === k && x.end > pFrom && x.start < rangeEnd()).sort((a, b) => b.start - a.start);
+  const cap = $("actCap");
+  function paint(){
+    bars.forEach((r, i) => r.setAttribute("opacity", sel < 0 || sel === i ? 1 : 0.35));
+    lights.forEach((el, i) => { if (el) el.style.opacity = sel < 0 || sel === i ? "" : "0.3"; });
+    /* With a bar selected, the list shows only the entries of that day (or hour, week or month). */
+    const bk = sel < 0 ? null : buckets[sel];
+    fillSessions($("actSessions"), bk ? allEntries.filter(x => x.end > bk.a && x.start < bk.b) : allEntries, colorMap());
+    cap.textContent = sel < 0 ? "Total " + durFmt(total) + (kind === "hour" ? " (by hour)" : kind === "day" ? " (by day)" : kind === "week" ? " (by week)" : " (by month)") : longLab(buckets[sel]) + " - " + durFmt(buckets[sel].ms);
+  }
+  const ch_ = $("actChart"); ch_.innerHTML = ""; ch_.appendChild(svg);
+  /* Moving lights inside the bars, same recipe as the pie chart: soft glows in the activity color drift up and down inside each bar. */
+  const ov = document.createElement("div"); ov.className = "barlights"; ov.setAttribute("aria-hidden", "true");
+  const cs = ["--c1", "--c2", "--c3"], ts = [6, 7.5, 8.5, 6.8, 9.2];
+  geo.forEach(g => {
+    const el = document.createElement("div"); el.className = "bl";
+    el.style.cssText = "--c:" + color + ";left:" + (g.x / W * 100).toFixed(3) + "%;top:" + (g.y / H * 100).toFixed(3) + "%;width:" + (g.w / W * 100).toFixed(3) + "%;height:" + (g.h / H * 100).toFixed(3) + "%";
+    const cnt = Math.max(1, Math.min(10, Math.round(g.h / (g.w * 0.8))));   /* taller bars get more lights */
+    const bwPct = Math.max(190, (g.h / cnt) / g.w * 125);   /* lights are big enough to overlap, so no dark gaps */
+    el.style.setProperty("--bb", Math.min(5, g.w * 0.22).toFixed(1) + "px");   /* thin bars get less blur, which keeps them as bright as the pie */
+    el.style.setProperty("--bw", bwPct.toFixed(0) + "%");
+    for (let j = 0; j < cnt; j++){
+      const b = document.createElement("b"), f = (j * 0.618 + g.i * 0.37) % 1, amp = Math.min(22, 70 / cnt) * (0.6 + 0.4 * f), t = ts[(j + g.i) % 5];
+      b.style.cssText = "--bc:var(" + cs[j % 3] + ");--top:" + ((j + 0.5) / cnt * 100).toFixed(1) + "%;--y0:" + (-amp * 0.8).toFixed(1) + "%;--y1:" + (amp * 0.9).toFixed(1) + "%;--y2:" + (-amp * 0.2).toFixed(1) + "%;--t:" + t + "s;--dl:-" + (((j * 1.7 + g.i * 0.9) % t)).toFixed(1) + "s;--dir:" + (j % 2 ? "reverse" : "normal");
+      el.appendChild(b);
+    }
+    lights[g.i] = el; ov.appendChild(el);
+  });
+  ch_.appendChild(ov);
+  paint();
+}
+$("actBack").onclick = () => { actFocus = null; renderStats(); };
+$("actAdjust").onclick = () => { if (actFocus) askRename("activity", actFocus); };
+
+function fillSessions(wrap, list, colors){
+  wrap.innerHTML = "";
+  if (list.length){
+    const h = document.createElement("h2"); h.textContent = "Sessions"; wrap.appendChild(h);
+    let curDay = null, box = null;
+    list.slice(0, 200).forEach(s => {
+      const dl = dayLabel(s.start);
+      if (dl !== curDay){
+        curDay = dl;
+        const dh = document.createElement("div"); dh.className = "day"; dh.textContent = dl; wrap.appendChild(dh);
+        box = document.createElement("div"); box.className = "list glass"; wrap.appendChild(box);
+      }
+      const it = document.createElement("div"); it.className = "it";
+      it.innerHTML = '<div class="l"><div class="t1"><span class="dot"></span><span class="nm"></span></div><div class="t2"></div></div><span class="d"></span><button class="trash" aria-label="Delete session">' + TRASH + '</button>';
+      it.querySelector(".dot").style.background = colors[s.label.toLowerCase()];
+      it.querySelector(".nm").textContent = s.label;
+      it.querySelector(".t2").textContent = hhmm(s.start) + " - " + hhmm(s.end);
+      it.querySelector(".d").textContent = durFmt(s.end - s.start);
+      it.querySelector(".trash").dataset.id = s.id;
+      it.querySelector(".l").dataset.id = s.id;
+      box.appendChild(it);
+    });
+  }
+}
 function renderStats(){
+  const av = $("actView"), tools = document.querySelector("#stats > .tools");
+  if (actFocus){
+    $("summary").style.display = "none"; $("sessions").style.display = "none"; if (tools) tools.style.display = "none";
+    av.style.display = ""; renderActivityView(); return;
+  }
+  av.style.display = "none"; $("summary").style.display = ""; $("sessions").style.display = ""; if (tools) tools.style.display = "";
   const from = rangeStart(), to = rangeEnd();
   const list = state.sessions.filter(s => s.end > from && s.start < to).sort((a,b) => b.start - a.start);
   const colors = colorMap();
@@ -1072,7 +1241,7 @@ function renderStats(){
     const gl = document.createElement("div"); gl.className = "pielights"; gl.setAttribute("aria-hidden", "true");
     donut.slices.forEach(sl => {
       const el = document.createElement("div"); el.className = "pl-slice" + (sl.s >= 359.9 ? " full" : "");   /* a full ring needs no sector mask, which would leave a seam at the top */
-      el.style.cssText = "--c:" + sl.color + ";--a:" + sl.a.toFixed(2) + "deg;--s:" + sl.s.toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
+      el.style.cssText = "--c:" + sl.color + ";--a:" + (sl.s >= 359.9 ? sl.a : sl.a - 0.2).toFixed(2) + "deg;--s:" + (sl.s >= 359.9 ? sl.s : sl.s + 0.4).toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
       /* Longer arcs get more lights so they never look empty */
       const raw = Math.round(sl.s / 32);
       let n;
@@ -1110,32 +1279,11 @@ function renderStats(){
       li.querySelector(".du").textContent = durFmt(g.ms);
       ul.appendChild(li);
     });
-    ul.addEventListener("click", e => { const li = e.target.closest("li"); if (li) askRename("activity", li.dataset.label); });
+    ul.addEventListener("click", e => { const li = e.target.closest("li"); if (li){ actFocus = li.dataset.label; renderStats(); $("stats").scrollTop = 0; } });
     sum.appendChild(ul);
   }
 
-  const wrap = $("sessions"); wrap.innerHTML = "";
-  if (list.length){
-    const h = document.createElement("h2"); h.textContent = "Sessions"; wrap.appendChild(h);
-    let curDay = null, box = null;
-    list.slice(0, 200).forEach(s => {
-      const dl = dayLabel(s.start);
-      if (dl !== curDay){
-        curDay = dl;
-        const dh = document.createElement("div"); dh.className = "day"; dh.textContent = dl; wrap.appendChild(dh);
-        box = document.createElement("div"); box.className = "list glass"; wrap.appendChild(box);
-      }
-      const it = document.createElement("div"); it.className = "it";
-      it.innerHTML = '<div class="l"><div class="t1"><span class="dot"></span><span class="nm"></span></div><div class="t2"></div></div><span class="d"></span><button class="trash" aria-label="Delete session">' + TRASH + '</button>';
-      it.querySelector(".dot").style.background = colors[s.label.toLowerCase()];
-      it.querySelector(".nm").textContent = s.label;
-      it.querySelector(".t2").textContent = hhmm(s.start) + " - " + hhmm(s.end);
-      it.querySelector(".d").textContent = durFmt(s.end - s.start);
-      it.querySelector(".trash").dataset.id = s.id;
-      it.querySelector(".l").dataset.id = s.id;
-      box.appendChild(it);
-    });
-  }
+  fillSessions($("sessions"), list, colors);
 }
 $("range").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;

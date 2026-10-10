@@ -302,14 +302,14 @@ nav button.on{opacity:1;color:var(--tint)}
 #actChart rect.bar{transition:opacity .2s ease}
 /* The picker window has exactly the height of the Choose color window (set when it opens). */
 #pickDialog{display:flex;flex-direction:column}
-#pickDialog .spectrum{flex:1;min-height:150px}
-.pickhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 14px}
-.roundbtn{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink);cursor:pointer;padding:0}
+#pickDialog .spectrum{flex:1;min-height:150px;margin-top:10px}
+.pickhead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0;padding:0;position:relative;top:-6px}   /* lifted so the row sits centered between the top edge and the spectrum; same padding as the Choose color window: the header fills the space of the title, and the spectrum starts where the colors start */
+.roundbtn{flex:none;width:33px;height:33px;border-radius:50%;display:grid;place-items:center;color:var(--ink);cursor:pointer;padding:0}
 .roundbtn:active{transform:scale(.92)}
 .roundbtn.red{color:#FF3B30}
 .roundbtn.green{color:#30D158}
 .pkinfo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:.95rem;color:var(--muted)}
-.pkchip{width:30px;height:30px;border-radius:50%;background:var(--cc,#0A84FF);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.pkchip{width:28px;height:28px;border-radius:50%;background:var(--cc,#0A84FF);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
 .spectrum{position:relative;border-radius:18px;overflow:hidden;touch-action:none;cursor:crosshair;background:linear-gradient(to bottom,#fff 0%,rgba(255,255,255,0) 50%,rgba(0,0,0,0) 50%,#000 100%),linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);box-shadow:inset 0 0 0 1px var(--glass-edge)}
 .pkdot{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid #fff;background:var(--cc,#0A84FF);box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.4);pointer-events:none}
 .customcolor{display:block;text-align:center;cursor:pointer}
@@ -322,7 +322,8 @@ nav button.on{opacity:1;color:var(--tint)}
 .swatches .plus .lp-label::after{width:2.5px;height:40%}
 .customcolor.on{outline:3px solid var(--ink);outline-offset:2px}
 .customcolor input{position:absolute;inset:0;z-index:3;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
-.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:14px 0 16px}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0 18px}   /* the colors sit in the middle between the title and the Cancel button */
+#colorScrim .dialog{padding-bottom:22px}   /* same space above the title and below Cancel */
 .swatches button{aspect-ratio:1;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:var(--sw);cursor:pointer;padding:0}
 .swatches button.on{outline:3px solid var(--ink);outline-offset:2px}
 .swatches button:active{transform:scale(.92)}
@@ -1078,6 +1079,7 @@ $("customLabel").onclick = () => {
   paintPicker();
   /* Same pop up and disappear animation as the Choose color window: it closes, then the picker opens at exactly the same size. */
   $("pickDialog").style.height = $("colorScrim").querySelector(".dialog").offsetHeight + "px";
+  $("pickDialog").querySelector(".pickhead").style.height = ($("swatches").offsetTop - $("clTitle").offsetTop) + "px";   /* header takes exactly the space of the title, so the spectrum lines up with the color circles */
   hideScrim("colorScrim");
   setTimeout(() => showScrim("pickScrim"), 190);
 };

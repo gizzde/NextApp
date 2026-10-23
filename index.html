@@ -286,7 +286,11 @@ nav button.on{opacity:1;color:var(--tint)}
 .backbtn{flex:none;width:38px;height:38px;border-radius:50%;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}   /* glass look comes from the .glass class, same as the period buttons */
 .backbtn:active{transform:scale(.92)}
 #actCap{font-size:.95rem;font-weight:600;margin:2px 2px 10px;min-height:1.3em}
-#actChart{position:relative}
+#actChart{position:relative;touch-action:pan-y}
+#actChart.inR{animation:chartInR .22s ease-out}
+#actChart.inL{animation:chartInL .22s ease-out}
+@keyframes chartInR{from{transform:translateX(28px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes chartInL{from{transform:translateX(-28px);opacity:.3}to{transform:none;opacity:1}}
 #actChart svg{width:100%;height:auto;display:block}
 .barlights{position:absolute;left:0;top:0;width:100%;aspect-ratio:320 / 190;pointer-events:none}
 .bl{position:absolute;--c1:var(--c);--c2:color-mix(in srgb, var(--c) 66%, #fff);--c3:color-mix(in srgb, var(--c) 94%, #000);filter:blur(var(--bb,5px)) saturate(170%);opacity:1;clip-path:inset(0 round 4px 4px 0 0);transition:opacity .2s ease}
@@ -598,6 +602,8 @@ nav button.on{opacity:1;color:var(--tint)}
 const LS_KEY = "timelog-v1";
 let state = { current: null, sessions: [], colors: {}, updatedAt: 0 };
 let range = "today";
+let shift = 0;   /* days the chosen period has been moved back by swiping the bar chart (0 or negative) */
+let swipedAt = 0;
 const $ = id => document.getElementById(id);
 
 /* ---------- storage ---------- */
@@ -1104,17 +1110,20 @@ $("colorScrim").addEventListener("click", e => { if (e.target.id === "colorScrim
 /* ---------- stats ---------- */
 let custom = null; /* { from: ms at local midnight, to: ms at next midnight after last day } */
 function rangeStart(){
-  const now = new Date();
-  if (range === "today"){ now.setHours(0,0,0,0); return now.getTime(); }
-  if (range === "yesterday"){ now.setHours(0,0,0,0); now.setDate(now.getDate() - 1); return now.getTime(); }
-  if (range === "week"){ now.setHours(0,0,0,0); now.setDate(now.getDate() - 6); return now.getTime(); }   /* today and the 6 days before it: always 7 days */
-  if (range === "month") return Date.now() - 30*864e5;
-  if (range === "custom" && custom) return custom.from;
+  const t0 = dayStart(Date.now());
+  if (range === "today") return addDays(t0, shift);
+  if (range === "yesterday") return addDays(t0, -1 + shift);
+  if (range === "week") return addDays(t0, -6 + shift);   /* today and the 6 days before it: always 7 days */
+  if (range === "month") return addDays(Date.now() - 30*864e5, shift);
+  if (range === "custom" && custom) return addDays(custom.from, shift);
   return 0;
 }
 function rangeEnd(){
-  if (range === "yesterday"){ const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); }
-  return range === "custom" && custom ? custom.to : Infinity;
+  const t0 = dayStart(Date.now());
+  if (range === "today" || range === "week") return shift === 0 ? Infinity : addDays(t0, shift + 1);
+  if (range === "yesterday") return addDays(t0, shift);
+  if (range === "month") return shift === 0 ? Infinity : addDays(Date.now(), shift);
+  return range === "custom" && custom ? addDays(custom.to, shift) : Infinity;
 }
 function dateInput(ts){
   const d = new Date(ts), p = n => String(n).padStart(2,"0");
@@ -1133,15 +1142,13 @@ function openPeriod(){
   showScrim("periodScrim");
 }
 function closePeriod(){ hideScrim("periodScrim"); }
-function setRangeButton(r){
-  range = r;
-  document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x.dataset.r === r));
-  /* The chosen dates replace the word Custom on its button until another period button is pressed. */
+/* The chosen dates replace the word Custom on its button until another period button is pressed. */
+function paintCustomLabel(){
   const cb = document.querySelector('#range button[data-r="custom"]');
   let txt = "Custom";
-  if (r === "custom" && custom){
-    const last = custom.to - 1, a = new Date(custom.from), b = new Date(last);
-    if (dateInput(custom.from) === dateInput(last)) txt = shortDate(custom.from);
+  if (range === "custom" && custom){
+    const from = addDays(custom.from, shift), last = addDays(custom.to, shift) - 1, a = new Date(from), b = new Date(last);
+    if (dateInput(from) === dateInput(last)) txt = shortDate(from);
     else if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) txt = a.toLocaleDateString(undefined, { month: "short" }) + " " + a.getDate() + "-" + b.getDate();
     else { const nd = d => d.toLocaleDateString(undefined, { month: "numeric", day: "numeric" }); txt = nd(a) + "-" + nd(b); }
   }
@@ -1150,6 +1157,12 @@ function setRangeButton(r){
   const L = txt.length;
   cb.style.flex = L > 6 ? Math.min(1.5, 1 + (L - 6) * 0.11).toFixed(2) : "";
   cb.style.fontSize = L > 6 ? Math.max(0.78, 0.95 - (L - 6) * 0.04).toFixed(2) + "rem" : "";
+}
+function setRangeButton(r){
+  range = r;
+  document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x.dataset.r === r));
+  shift = 0;
+  paintCustomLabel();
   syncSlider($("range"), true);   /* after the label, because a long date makes its button wider */
   $("periodLabel").hidden = true; $("periodLabel").textContent = "";
   renderStats();
@@ -1242,6 +1255,8 @@ function renderActivityView(){
   const pFrom = rangeStart(), pTo = Math.min(rangeEnd(), Date.now());
   const first = dayStart(Math.max(pFrom, 0) || dayStart(Date.now()));
   const nDays = Math.max(1, Math.round((dayStart(Math.max(pTo - 1, first)) - first) / 864e5) + 1);
+  const lastDay = dayStart(Math.max(pTo - 1, first));
+  const span = nDays <= 1 ? shortDate(first) : shortDate(first) + " - " + shortDate(lastDay);
   const mine = state.sessions.filter(x => x.label.toLowerCase() === k);
   if (state.current && state.current.label.toLowerCase() === k) mine.push({ start: state.current.start, end: Date.now() });
   /* Buckets: hours for a single day, days up to about two months, then weeks, then months. */
@@ -1276,7 +1291,7 @@ function renderActivityView(){
     if (bk.ms > 0) geo.push({ i, x, y: T + ch - hh, w: bw, h: hh });
     if (i % every === 0) mk("text", { x: L + i * slot + slot / 2, y: H - 8, "text-anchor": "middle" }, kind === "day" && n <= 8 ? new Date(bk.a).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : bk.lab);
     const hit = mk("rect", { x: L + i * slot, y: T, width: slot, height: ch + B, fill: "transparent" });
-    hit.addEventListener("click", () => { sel = sel === i ? -1 : i; paint(); });   /* tapping the selected bar again shows everything */
+    hit.addEventListener("click", () => { if (Date.now() - swipedAt < 400) return; sel = sel === i ? -1 : i; paint(); });   /* tapping the selected bar again shows everything */
   });
   let sel = -1;
   const allEntries = state.sessions.filter(x => x.label.toLowerCase() === k && x.end > pFrom && x.start < rangeEnd()).sort((a, b) => b.start - a.start);
@@ -1287,7 +1302,7 @@ function renderActivityView(){
     /* With a bar selected, the list shows only the entries of that day (or hour, week or month). */
     const bk = sel < 0 ? null : buckets[sel];
     fillSessions($("actSessions"), bk ? allEntries.filter(x => x.end > bk.a && x.start < bk.b) : allEntries, colorMap());
-    cap.textContent = sel < 0 ? "Total " + durFmt(total) + (kind === "hour" ? " (by hour)" : kind === "day" ? " (by day)" : kind === "week" ? " (by week)" : " (by month)") : longLab(buckets[sel]) + " - " + durFmt(buckets[sel].ms);
+    cap.textContent = sel < 0 ? (shift !== 0 ? span + " - " : "") + "Total " + durFmt(total) + (kind === "hour" ? " (by hour)" : kind === "day" ? " (by day)" : kind === "week" ? " (by week)" : " (by month)") : longLab(buckets[sel]) + " - " + durFmt(buckets[sel].ms);
   }
   const ch_ = $("actChart"); ch_.innerHTML = ""; ch_.appendChild(svg);
   /* Moving lights inside the bars, same recipe as the pie chart: soft glows in the activity color drift up and down inside each bar. */
@@ -1317,7 +1332,33 @@ function renderActivityView(){
   ch_.appendChild(ov);
   paint();
 }
-$("actBack").onclick = () => { actFocus = null; renderStats(); };
+$("actBack").onclick = () => { actFocus = null; shift = 0; paintCustomLabel(); renderStats(); };
+
+/* ---------- swipe the bar chart to move the period one day back or forward ---------- */
+function shiftPeriod(d){
+  const ns = shift + d;
+  if (ns > 0) return false;   /* no future */
+  if (d < 0){   /* no further back than the first recorded session */
+    const first = state.sessions.length ? Math.min.apply(null, state.sessions.map(x => x.start)) : Infinity;
+    const saved = shift; shift = ns; const e = rangeEnd(); shift = saved;
+    if ((e === Infinity ? Date.now() : e) <= first) return false;
+  }
+  shift = ns; return true;
+}
+let sw = null;
+const acEl = $("actChart");
+acEl.addEventListener("pointerdown", e => { sw = { x: e.clientX, y: e.clientY }; });
+acEl.addEventListener("pointercancel", () => { sw = null; });
+acEl.addEventListener("pointerup", e => {
+  if (!sw) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+  if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  swipedAt = Date.now();   /* so the swipe is not taken as a tap on a bar */
+  /* Swipe right: one day back. Swipe left: one day forward. */
+  if (!shiftPeriod(dx < 0 ? 1 : -1)) return;
+  paintCustomLabel(); syncSlider($("range"), true); renderStats();
+  acEl.classList.remove("inL", "inR"); void acEl.offsetWidth; acEl.classList.add(dx < 0 ? "inR" : "inL");
+});
 $("actAdjust").onclick = () => { if (actFocus) askRename("activity", actFocus); };
 
 function fillSessions(wrap, list, colors){
@@ -1373,21 +1414,11 @@ function renderStats(){
     donut.slices.forEach(sl => {
       const el = document.createElement("div"); el.className = "pl-slice" + (sl.s >= 359.9 ? " full" : "") + (sl.multi ? " multi" : "");   /* a full ring needs no sector mask, which would leave a seam at the top */
       el.style.cssText = "--c:" + sl.color + ";--a:" + (sl.s >= 359.9 ? sl.a : sl.a - 0.2).toFixed(2) + "deg;--s:" + (sl.s >= 359.9 ? sl.s : sl.s + 0.4).toFixed(2) + "deg;--mid:" + (sl.a + sl.s / 2).toFixed(2) + "deg;--amp:" + (sl.s / 2).toFixed(2) + "deg";
-      /* Longer arcs get more lights so they never look empty */
-      const raw = Math.round(sl.s / 32);
-      let n;
-      if (sl.s < 30) n = 1;            /* under 30 degrees: 1 light */
-      else if (sl.s < 40) n = 2;       /* 30 to 40: 2 lights */
-      else if (sl.s < 60) n = 4;       /* 40 to 60: 4 lights */
-      else if (sl.s < 80) n = 5;       /* 60 to 80: 5 lights */
-      else if (sl.s < 120) n = 7;      /* 80 to 120: 7 lights */
-      else if (sl.s < 144) n = 9;      /* 120 to 144: 9 lights */
-      else if (raw <= 4) n = 7;        /* medium arcs: 7 lights */
-      else if (raw === 5) n = 11;      /* long arcs: 11 lights */
-      else n = raw + 6;                /* longer still: keeps growing with length */
+      /* One light for every 12 degrees of arc (at least 1), so every slice has the same density of lights.
+         A slice of 30 degrees has 3 lights, a quarter has 8, half has 15 and the full ring has 30. */
+      let n = Math.max(1, Math.round(sl.s / 12));
       if (sl.multi){ const k = sl.multi.length; n = Math.ceil(Math.max(n, 3, k) / k) * k; }   /* every member color gets the same number of lights */
-      if (donut.slices.length === 1) n += 19;   /* a single full ring gets 19 extra lights */
-      n = Math.min(donut.slices.length === 1 ? 40 : 20, n);
+      n = Math.min(36, n);
       const cs = ["--c1", "--c2", "--c3"], ws = [26.5, 22.1, 25.1], ts = [6, 7.5, 8.5, 6.8, 9.2];
       for (let i = 0; i < n; i++){
         const b = document.createElement("b");

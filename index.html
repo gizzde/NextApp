@@ -87,6 +87,7 @@ body{
 .status{min-height:84px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 12px}
 .activity{font-size:1.45rem;font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
 .hint{color:var(--muted);font-size:1rem}
+#activity{align-self:center;cursor:pointer}
 .clock{font-family:-apple-system,"SF Pro Rounded",BlinkMacSystemFont,sans-serif;font-size:clamp(3.4rem,17vw,4.8rem);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1}
 .lens{position:relative;display:grid;place-items:center}
 .orbs{
@@ -931,6 +932,12 @@ function askRename(kind, key){
     paintColorDot((colorMap()[key.toLowerCase()]));
     $("rnText").textContent = "";
     $("rnInput").value = key;
+  } else if (kind === "current"){
+    /* The running activity only: other entries with the same name stay as they are. */
+    if (!state.current) return;
+    $("rnTitle").textContent = "Current activity";
+    $("rnText").textContent = "";
+    $("rnInput").value = state.current.label;
   } else {
     const s = state.sessions.find(x => x.id === key); if (!s) return;
     $("rnTitle").textContent = "Edit session";
@@ -985,6 +992,9 @@ function saveRename(){
     if (k !== nk) delete state.colors[k];
     if (colorPick.changed){ if (colorPick.value) state.colors[nk] = colorPick.value; else delete state.colors[nk]; }
     else if (oldColor && k !== nk && !state.colors[nk]) state.colors[nk] = oldColor;
+  } else if (kind === "current"){
+    if (!state.current){ closeRename(); return; }
+    state.current.label = name;
   } else {
     const s = state.sessions.find(x => x.id === key); if (!s) return;
     const { start, end } = editedTimes();
@@ -998,6 +1008,8 @@ function saveRename(){
   persist(); render(); closeRename(); toast(kind === "session" ? "Session updated" : "Activity updated");
 }
 $("rnSave").onclick = saveRename;
+/* While an activity is running, pressing its name changes the name of the running entry only. */
+$("activity").onclick = () => { if (state.current) askRename("current", ""); };
 $("rnCancel").onclick = closeRename;
 /* Resume: drop the saved end time and keep the activity running from its original start. */
 $("rnResume").onclick = () => {
@@ -1095,7 +1107,7 @@ function rangeStart(){
   const now = new Date();
   if (range === "today"){ now.setHours(0,0,0,0); return now.getTime(); }
   if (range === "yesterday"){ now.setHours(0,0,0,0); now.setDate(now.getDate() - 1); return now.getTime(); }
-  if (range === "week") return Date.now() - 7*864e5;
+  if (range === "week"){ now.setHours(0,0,0,0); now.setDate(now.getDate() - 6); return now.getTime(); }   /* today and the 6 days before it: always 7 days */
   if (range === "month") return Date.now() - 30*864e5;
   if (range === "custom" && custom) return custom.from;
   return 0;
@@ -1284,8 +1296,15 @@ function renderActivityView(){
   geo.forEach(g => {
     const el = document.createElement("div"); el.className = "bl";
     el.style.cssText = "--c:" + color + ";left:" + (g.x / W * 100).toFixed(3) + "%;top:" + (g.y / H * 100).toFixed(3) + "%;width:" + (g.w / W * 100).toFixed(3) + "%;height:" + (g.h / H * 100).toFixed(3) + "%";
-    const cnt = Math.max(1, Math.min(10, Math.round(g.h / (g.w * 0.8))));   /* taller bars get more lights */
-    const bwPct = Math.max(190, (g.h / cnt) / g.w * 125);   /* lights are big enough to overlap, so no dark gaps */
+    const cnt = Math.max(1, Math.min(14, Math.round(g.h / (g.w * 0.8))));   /* taller bars get more lights */
+    /* Wide bars: each light is 2.3 times as tall as the space between lights. Thin bars get a bit more overlap (up to 2.55 times),
+       so no gaps show between the lights, and their shades differ less, so no stripes show either. */
+    const thin = Math.max(0, Math.min(1, (20 - g.w) / 14));
+    const bwPct = Math.max(120, (g.h / cnt) / g.w * (230 + thin * 25));
+    if (thin > 0){
+      el.style.setProperty("--c2", "color-mix(in srgb, var(--c) " + Math.round(66 + thin * 4) + "%, #fff)");
+      el.style.setProperty("--c3", "color-mix(in srgb, var(--c) " + Math.round(84 + thin * 2) + "%, #000)");
+    }
     el.style.setProperty("--bb", Math.min(5, g.w * 0.22).toFixed(1) + "px");   /* thin bars get less blur, which keeps them as bright as the pie */
     el.style.setProperty("--bw", bwPct.toFixed(0) + "%");
     for (let j = 0; j < cnt; j++){
@@ -1361,6 +1380,8 @@ function renderStats(){
       else if (sl.s < 40) n = 2;       /* 30 to 40: 2 lights */
       else if (sl.s < 60) n = 4;       /* 40 to 60: 4 lights */
       else if (sl.s < 80) n = 5;       /* 60 to 80: 5 lights */
+      else if (sl.s < 120) n = 7;      /* 80 to 120: 7 lights */
+      else if (sl.s < 144) n = 9;      /* 120 to 144: 9 lights */
       else if (raw <= 4) n = 7;        /* medium arcs: 7 lights */
       else if (raw === 5) n = 11;      /* long arcs: 11 lights */
       else n = raw + 6;                /* longer still: keeps growing with length */

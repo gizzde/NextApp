@@ -416,7 +416,6 @@ nav button.on{opacity:1;color:var(--tint)}
 .lightpill.grey.alt .lp-orbs i:nth-child(5){--t:7.6s;--dir:normal}
 .lightpill:active .lp-orbs{filter:blur(12px) saturate(200%) brightness(1.1)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lightpill{border-color:rgba(255,255,255,.45);background:radial-gradient(60% 120% at 30% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 70%), rgba(255,255,255,.03)}}
-.extext{height:34vh;font-family:ui-monospace,Menlo,monospace;font-size:.72rem;line-height:1.4;resize:none;margin-bottom:14px;white-space:pre;overflow:auto}
 .err{color:var(--danger);font-size:.9rem;min-height:1.2em;margin-top:10px}
 .stack{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .stack .row{display:flex;gap:10px}
@@ -576,22 +575,6 @@ nav button.on{opacity:1;color:var(--tint)}
     <div class="stack">
       <button class="pill primary" id="pdApply">Show period</button>
       <button class="pill lightpill grey" id="pdCancel"><span class="lp-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="lp-label">Cancel</span></button>
-    </div>
-  </div>
-</div>
-
-<div class="scrim" id="exportScrim">
-  <div class="sheet glass" role="dialog" aria-labelledby="exTitle">
-    <div class="grab"></div>
-    <h3 id="exTitle">Export data</h3>
-    <div class="sub" id="exInfo"></div>
-    <textarea class="field extext" id="exText" readonly></textarea>
-    <div class="stack">
-      <button class="pill primary" id="exCopy">Copy CSV</button>
-      <div class="row">
-        <button class="pill" id="exShare">Share file</button>
-        <button class="pill" id="exClose">Close</button>
-      </div>
     </div>
   </div>
 </div>
@@ -1457,40 +1440,25 @@ $("range").addEventListener("click", e => {
 });
 
 /* ---------- export / import ---------- */
-/* Export opens a panel with the data as text. Copy always works on iPhone,
-   and Share file is offered as a second option. */
+/* Export opens the share sheet with the CSV file, so it can be saved wherever you choose (for example Save to Files).
+   Where file sharing is not available, the file is downloaded instead. */
 function buildCSV(){
   const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
   return ["activity,start,end,minutes"].concat(state.sessions.slice().sort((a,b) => a.start - b.start).map(s =>
     [esc(s.label), new Date(s.start).toISOString(), new Date(s.end).toISOString(), ((s.end-s.start)/60000).toFixed(1)].join(","))).join("\n");
 }
-$("export").onclick = () => {
-  $("exText").value = buildCSV();
-  $("exInfo").textContent = state.sessions.length + (state.sessions.length === 1 ? " session" : " sessions");
-  showScrim("exportScrim");
-};
-$("exCopy").onclick = async () => {
-  const ta = $("exText");
-  try { await navigator.clipboard.writeText(ta.value); toast("CSV copied"); return; } catch(e){}
-  try {
-    ta.removeAttribute("readonly"); ta.focus(); ta.setSelectionRange(0, ta.value.length);
-    const ok = document.execCommand("copy"); ta.setAttribute("readonly", "");
-    if (ok){ toast("CSV copied"); return; }
-  } catch(e){}
-  ta.focus(); ta.select();
-  toast("Text selected. Tap Copy in the menu");
-};
-$("exShare").onclick = async () => {
-  const name = "time-log-" + new Date().toISOString().slice(0,10) + ".csv";
+$("export").onclick = async () => {
+  const name = "time-log-" + new Date().toISOString().slice(0,10) + ".csv", csv = buildCSV();
   try{
-    const file = new File([$("exText").value], name, { type: "text/csv" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: name }); return; }
-    if (navigator.share){ await navigator.share({ title: name, text: $("exText").value }); return; }
-    toast("Sharing is not available here. Use Copy");
-  }catch(e){ if (!(e && e.name === "AbortError")) toast("Sharing failed. Use Copy"); }
+    const file = new File([csv], name, { type: "text/csv" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file] }); return; }
+  }catch(e){ if (e && e.name === "AbortError") return; }
+  try{
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }catch(e){ toast("Could not export the file"); }
 };
-$("exClose").onclick = () => hideScrim("exportScrim");
-$("exportScrim").addEventListener("click", e => { if (e.target.id === "exportScrim") hideScrim("exportScrim"); });
 function parseCSV(text){
   const rows = []; let row = [], cur = "", q = false;
   for (let i = 0; i < text.length; i++){
